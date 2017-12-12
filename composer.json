@@ -1,5 +1,5 @@
 {
-  "name": "Nestednet/laravel-attachments",
+  "name": "nestednet/laravel-attachments",
   "description": "Laravel package to link file attachment to models",
   "type": "package",
   "license": "MIT",
