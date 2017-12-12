@@ -397,7 +397,8 @@ class Attachment extends Model
      */
     protected function getPartitionDirectory()
     {
-        return implode('/', array_slice(str_split($this->uuid, 3), 0, 3)) . '/';
+        // Do not implode directories
+        return '';
     }
 
 
