@@ -459,7 +459,7 @@ class Attachment extends Model
      */
     protected function copyToStorage($localPath, $storagePath)
     {
-        return Storage::disk($this->disk)->put($storagePath, FileHelper::get($localPath));
+        return Storage::disk($this->disk)->put($storagePath, FileHelper::get($localPath), 'public');
     }
 
 
