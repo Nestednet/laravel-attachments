@@ -55,9 +55,12 @@ return [
     |--------------------------------------------------------------------------
     |
     | This allow to extend the attachment model with new columns
+    | `dropzone_attributes` holds the public fields returned after a successful upload via DropzoneController
     |
     */
-    'attributes' => ['title', 'description', 'key', 'disk', 'group'],
+    'attributes' => ['title', 'description', 'key', 'disk', 'filepath', 'group'],
+
+    'dropzone_attributes' => ['uuid', 'url', 'filename', 'filetype', 'filesize', 'title', 'description', 'key', 'group'],
 
     /*
     |--------------------------------------------------------------------------
@@ -69,5 +72,17 @@ return [
     */
     'storage_directory' => [
         'prefix' =>  rtrim(env('ATTACHMENTS_STORAGE_DIRECTORY_PREFIX', 'attachments'), '/'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Database configuration
+    |--------------------------------------------------------------------------
+    |
+    | Allows to set the database connection name for the module's models
+    |
+    */
+    'database' => [
+        'connection' =>  env('ATTACHMENTS_DATABASE_CONNECTION'),
     ],
 ];

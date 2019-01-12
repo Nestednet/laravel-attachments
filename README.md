@@ -1,4 +1,4 @@
-# Laravel 5.5 file attachment helpers
+# Laravel 5.x file attachment helpers
 
 This package allows to quickly links files to models.
 
@@ -7,7 +7,7 @@ This package allows to quickly links files to models.
 
 ## Installation
 
-You can install this package via composer. Laravel 5.5 auto discovers the service provider.
+You can install this package via composer. Laravel 5.5+ auto discovers the service provider.
 
     composer require bnbwebexpertise/laravel-attachments
  
@@ -16,7 +16,7 @@ You can install this package via composer. Laravel 5.5 auto discovers the servic
 
 For 5.4 support install version 0.0.16 :
 
-    composer require bnbwebexpertise/laravel-attachments@0.0.16
+    composer require bnbwebexpertise/laravel-attachments:0.0.16
 
 Then add the service provider to your configuration :
 
@@ -323,6 +323,13 @@ The `-s` (or `--since=[timeInMinutes]`) option can be set to specify
  specified age will be deleted. This value is set to **1440** by default.
  
 ## Customization
+
+### Set a custom database connection name for the models
+
+You can customize the database connection name by either :
+
+* Adding an `.env` variable for `ATTACHMENTS_DATABASE_CONNECTION` (recommended) OR
+* Changing the configuration option `attachments.database.connection` in `config/attachments.php`.
  
 ### Extends Attachment model columns
 
@@ -336,6 +343,49 @@ This allows you to create migration to add new columns in the attachment table
 You may easily customize the folder/prefix where new attachments are stored by either:
 
 * Adding an `.env` variable for `ATTACHMENTS_STORAGE_DIRECTORY_PREFIX` (recommended) OR
-* Change the configuration option `attachments.storage_directory.prefix` in `config/attachments.php`.
+* Changing the configuration option `attachments.storage_directory.prefix` in `config/attachments.php`.
 
 The default value is `attachments` and any trailing `/`s will be trimmed automatically.
+
+### Customize the attachment storage filepath
+
+If you don't want to use the default storage filepath generation, you can provide the `filepath` option (relative to the root of storage disk).
+ It must contain the directory and filename. It's up to you to ensure that the provided filepath is not in conflict with another file.
+
+```php
+$model->attach('/foo/bar/pdf.pdf', ['filepath' => 'foo/bar/test.pdf']);
+```
+
+> This does not apply to attachments uploaded via the integrated DropZone controller. Only available for explicit attachments.
+
+### Extending the Attachment model class
+
+This can be helpful to add some relations to the attachment model.
+
+Create your own model that extends `Bnb\Laravel\Attachments\Attachment` :
+
+```php
+<?php
+namespace Foo\Models;
+
+MyAttachment extends Bnb\Laravel\Attachments\Attachment
+{
+    public function someCustomRelation() {
+        //
+    }
+}
+```
+
+Bind your model to the `Bnb\Laravel\Attachments\Contracts\AttachmentContract` interface in a service provider :
+
+```php
+    public function register()
+    {
+        // ...
+        $this->app->bind(
+            \Bnb\Laravel\Attachments\Contracts\AttachmentContract::class,
+            \Foo\Models\MyAttachment::class
+        );
+        // ...
+    }
+```

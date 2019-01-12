@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Storage;
 use Symfony\Component\HttpFoundation\File\File as FileObj;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Bnb\Laravel\Attachments\Contracts\AttachmentContract;
 
 /**
  * @property int    id
@@ -32,7 +33,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  *
  * @package   Bnb\Laravel\Attachments
  */
-class Attachment extends Model
+class Attachment extends Model implements AttachmentContract
 {
 
     protected $table = 'attachments';
@@ -53,7 +54,7 @@ class Attachment extends Model
      * Shortcut method to bind an attachment to a model
      *
      * @param string $uuid
-     * @param Model  $model a model that uses HasAttachment
+     * @param Model  $model   a model that uses HasAttachment
      * @param array  $options filter options based on configuration key `attachments.attributes`
      *
      * @return Attachment|null
@@ -87,8 +88,8 @@ class Attachment extends Model
     /**
      * Creates a file object from a file an uploaded file.
      *
-     * @param UploadedFile $uploadedFile
-     * @param string       $disk target storage disk
+     * @param UploadedFile $uploadedFile source file
+     * @param string       $disk         target storage disk
      *
      * @return $this|null
      */
@@ -102,7 +103,7 @@ class Attachment extends Model
         $this->filename = $uploadedFile->getClientOriginalName();
         $this->filesize = $uploadedFile->getClientSize();
         $this->filetype = $uploadedFile->getMimeType();
-        $this->filepath = $this->getStorageDirectory() . $this->getPartitionDirectory() . $this->getDiskName();
+        $this->filepath = $this->filepath ?: ($this->getStorageDirectory() . $this->getPartitionDirectory() . $this->getDiskName());
         $this->putFile($uploadedFile->getRealPath(), $this->filepath);
 
         return $this;
@@ -112,8 +113,8 @@ class Attachment extends Model
     /**
      * Creates a file object from a file on the disk.
      *
-     * @param string $filePath
-     * @param string $disk target storage disk
+     * @param string $filePath source file
+     * @param string $disk     target storage disk
      *
      * @return $this|null
      */
@@ -129,8 +130,39 @@ class Attachment extends Model
         $this->filename = $file->getFilename();
         $this->filesize = $file->getSize();
         $this->filetype = $file->getMimeType();
-        $this->filepath = $this->getStorageDirectory() . $this->getPartitionDirectory() . $this->getDiskName();
+        $this->filepath = $this->filepath ?: ($this->getStorageDirectory() . $this->getPartitionDirectory() . $this->getDiskName());
         $this->putFile($file->getRealPath(), $this->filepath);
+
+        return $this;
+    }
+
+
+    /**
+     * Creates a file object from a stream
+     *
+     * @param resource $stream   source stream
+     * @param string   $filename the resource filename
+     * @param string   $disk     target storage disk
+     *
+     * @return $this|null
+     */
+    public function fromStream($stream, $filename, $disk = null)
+    {
+        if ($stream === null) {
+            return null;
+        }
+
+        $this->disk = $this->disk ?: ($disk ?: Storage::getDefaultDriver());
+
+        $driver = Storage::disk($this->disk);
+
+        $this->filename = $filename;
+        $this->filepath = $this->filepath ?: ($this->getStorageDirectory() . $this->getPartitionDirectory() . $this->getDiskName());
+
+        $driver->putStream($this->filepath, $stream);
+
+        $this->filesize = $driver->size($this->filepath);
+        $this->filetype = $driver->mimeType($this->filepath);
 
         return $this;
     }
@@ -504,7 +536,7 @@ class Attachment extends Model
      * also good for performance. For local storage, *every* argument
      * is prefixed with the local root path.
      *
-     * @param string $string the command string
+     * @param string $string   the command string
      * @param string $filepath the path on storage
      *
      * @return mixed
@@ -529,5 +561,10 @@ class Attachment extends Model
         }
 
         return forward_static_call_array([$interface, $command], $args);
+    }
+
+    public function getConnectionName()
+    {
+        return config('attachments.database.connection') ?? $this->connection;
     }
 }

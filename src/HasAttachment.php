@@ -32,6 +32,7 @@ trait HasAttachment
         return $this->attachments()->where('key', $key)->first();
     }
 
+
     /**
      * Find all attachments with the given
      *
@@ -58,20 +59,27 @@ trait HasAttachment
             throw new \Exception('Attachment options must be an array');
         }
 
-        if(empty($fileOrPath)) {
+        if (empty($fileOrPath)) {
             throw new \Exception('Attached file is required');
         }
 
-        $options = array_only($options, config('attachments.attributes'));
+        $attributes = array_only($options, config('attachments.attributes'));
 
-        if ( ! empty($options['key']) && $attachment = $this->attachment($options['key'])) {
+        if ( ! empty($attributes['key']) && $attachment = $this->attachment($attributes['key'])) {
             $attachment->delete();
         }
 
         /** @var Attachment $attachment */
-        $attachment = new Attachment($options);
+        $attachment = new Attachment($attributes);
+        $attachment->filepath = ! empty($attributes['filepath']) ? $attributes['filepath'] : null;
 
-        if ($fileOrPath instanceof UploadedFile) {
+        if (is_resource($fileOrPath)) {
+            if (empty($options['filename'])) {
+                throw new \Exception('resources required options["filename"] to be set?');
+            }
+
+            $attachment->fromStream($fileOrPath, $options['filename']);
+        } elseif ($fileOrPath instanceof UploadedFile) {
             $attachment->fromPost($fileOrPath);
         } else {
             $attachment->fromFile($fileOrPath);
